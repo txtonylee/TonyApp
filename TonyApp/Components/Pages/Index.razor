@@ -10,7 +10,10 @@
         ShowFilterRow="true" 
         EditMode="GridEditMode.EditRow" 
         EditModelSaving="OnEditModelSaving"
-        DataItemDeleting="OnDataItemDeleting">
+        DataItemDeleting="OnDataItemDeleting"
+        VirtualScrollingMode="GridVirtualScrollingMode.RowsAndColumns"
+        VirtualScrollingEnabled="VirtualScrollingEnabled" PageSize="10"
+        SkeletonRowsEnabled="true">
     <Columns>
         <DxGridCommandColumn Width="150px" />
         <DxGridDataColumn FieldName="Date" DisplayFormat="D" />
@@ -25,6 +28,19 @@
                           SortOrder="GridColumnSortOrder.Ascending"
                           SortIndex="0" />
     </Columns>
+    <ToolbarTemplate>
+        <DxToolbar ItemRenderStyleMode="ToolbarRenderStyleMode.Plain">
+            <Items>
+                <DxToolbarItem BeginGroup="true" Alignment="ToolbarItemAlignment.Left">
+                    <Template Context="toolbar_item_context">
+                        <div class="d-flex flex-row align-items-center h-100">
+                            <DxCheckBox @bind-Checked="VirtualScrollingEnabled">Enable Virtual Scrolling</DxCheckBox>
+                        </div>
+                    </Template>
+                </DxToolbarItem>
+            </Items>
+        </DxToolbar>
+    </ToolbarTemplate>
     <TotalSummary>
         <DxGridSummaryItem FieldName="Date"
                            SummaryType=GridSummaryItemType.Min
@@ -35,6 +51,7 @@
 </DxGrid>
 
 @code {
+    bool VirtualScrollingEnabled { get; set; } = true;
     List<WeatherForecast> Data { get; set; }
 
     protected override void OnInitialized()
