@@ -16,7 +16,11 @@
         SkeletonRowsEnabled="true">
     <Columns>
         <DxGridCommandColumn Width="150px" />
-        <DxGridDataColumn FieldName="Date" DisplayFormat="D" />
+        <DxGridDataColumn FieldName="Date" DisplayFormat="yyyy/MM/dd">
+            <EditSettings>
+                <DxDateEditSettings Format="yyyy/MM/dd" />
+            </EditSettings>
+        </DxGridDataColumn>
         <DxGridDataColumn FieldName="Forecast" 
                           />
         <DxGridDataColumn FieldName="CloudCover" 
@@ -68,7 +72,7 @@
     {
         var editModel = (WeatherForecast)e.EditModel;
         var dataItem = e.IsNew ? new WeatherForecast() : (WeatherForecast)e.DataItem;
-
+        dataItem.Forecast = editModel.Forecast;
         dataItem.Date = editModel.Date;
         dataItem.TemperatureC = editModel.TemperatureC;
         dataItem.CloudCover = editModel.CloudCover;

@@ -1,0 +1,90 @@
+﻿@page "/products"
+@using Microsoft.EntityFrameworkCore
+@using Microsoft.AspNetCore.Components.QuickGrid
+@using TonyApp.Models
+@using TonyApp.Data
+@implements IAsyncDisposable
+@inject IDbContextFactory<TonyApp.Data.MyAppDbContext> DbFactory
+@rendermode InteractiveServer
+<PageTitle>Index</PageTitle>
+
+<h1>Index</h1>
+
+<p>
+    <a href="products/create" class="btn btn-primary">Create New</a>
+</p>
+
+@* <QuickGrid Class="table" Items="context.Product">
+    <PropertyColumn Property="product => product.Name" />
+    <PropertyColumn Property="product => product.Price" />
+    <PropertyColumn Property="product => product.Qty" />
+
+    <TemplateColumn Context="product">
+        <a href="@($"products/edit?id={product.Id}")" class="btn btn-info">Edit</a> |
+        <a href="@($"products/details?id={product.Id}")" class="btn btn-success">Details</a> |
+        <a href="@($"products/delete?id={product.Id}")" class="btn btn-danger">Delete</a>
+    </TemplateColumn>
+</QuickGrid> *@
+
+<DxGrid Data="@products"
+        CssClass="table"
+        KeyFieldName="Id"
+        ShowGroupPanel="true"
+        ShowFilterRow="true"
+        VirtualScrollingMode="GridVirtualScrollingMode.RowsAndColumns"
+        VirtualScrollingEnabled="VirtualScrollingEnabled" PageSize="10"
+        SkeletonRowsEnabled="true">
+
+    <Columns>
+        <DxGridCommandColumn Width="100px" />
+        <DxGridDataColumn FieldName="Name" Caption="Name" />
+        <DxGridDataColumn FieldName="Price" Caption="Price" DisplayFormat="c2" />
+        <DxGridDataColumn FieldName="Qty" Caption="Qty" />
+
+        <DxGridDataColumn Caption="Actions"
+                          Width="300px" >
+            <CellDisplayTemplate Context="cellContext">
+                @{
+                    var product = (Product)cellContext.DataItem;
+                }
+                <a href="@($"products/edit?id={product.Id}")" class="btn btn-info">Edit</a> |
+                <a href="@($"products/details?id={product.Id}")" class="btn btn-success">Details</a> |
+                <a href="@($"products/delete?id={product.Id}")" class="btn btn-danger">Delete</a>
+            </CellDisplayTemplate>
+        </DxGridDataColumn>
+    </Columns>
+
+    <ToolbarTemplate>
+        <DxToolbar ItemRenderStyleMode="ToolbarRenderStyleMode.Plain">
+            <Items>
+                <DxToolbarItem BeginGroup="true" Alignment="ToolbarItemAlignment.Left">
+                    <Template Context="toolbar_item_context">
+                        <div class="d-flex flex-row align-items-center h-100">
+                            <DxCheckBox @bind-Checked="VirtualScrollingEnabled">Enable Virtual Scrolling</DxCheckBox>
+                        </div>
+                    </Template>
+                </DxToolbarItem>
+            </Items>
+        </DxToolbar>
+    </ToolbarTemplate>
+
+</DxGrid>
+
+@code {
+    bool VirtualScrollingEnabled { get; set; } = true;
+    private MyAppDbContext context = default!;
+    private List<Product> products = new();
+
+    // protected override void OnInitialized()
+    // {
+    //     context = DbFactory.CreateDbContext();
+    // }
+
+    protected override async Task OnInitializedAsync()
+    {
+        context = DbFactory.CreateDbContext();
+        products = await context.Product.ToListAsync();
+    }
+
+    public async ValueTask DisposeAsync() => await context.DisposeAsync();
+}
