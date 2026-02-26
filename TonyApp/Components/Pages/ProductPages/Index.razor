@@ -3,7 +3,7 @@
 @using Microsoft.AspNetCore.Components.QuickGrid
 @using TonyApp.Models
 @using TonyApp.Data
-@implements IAsyncDisposable
+@* @implements IAsyncDisposable *@
 @inject IDbContextFactory<TonyApp.Data.MyAppDbContext> DbFactory
 @rendermode InteractiveServer
 <PageTitle>Index</PageTitle>
@@ -14,23 +14,13 @@
     <a href="products/create" class="btn btn-primary">Create New</a>
 </p>
 
-@* <QuickGrid Class="table" Items="context.Product">
-    <PropertyColumn Property="product => product.Name" />
-    <PropertyColumn Property="product => product.Price" />
-    <PropertyColumn Property="product => product.Qty" />
-
-    <TemplateColumn Context="product">
-        <a href="@($"products/edit?id={product.Id}")" class="btn btn-info">Edit</a> |
-        <a href="@($"products/details?id={product.Id}")" class="btn btn-success">Details</a> |
-        <a href="@($"products/delete?id={product.Id}")" class="btn btn-danger">Delete</a>
-    </TemplateColumn>
-</QuickGrid> *@
-
 <DxGrid Data="@products"
         CssClass="table"
         KeyFieldName="Id"
         ShowGroupPanel="true"
         ShowFilterRow="true"
+        EditMode="GridEditMode.EditRow"
+        EditModelSaving="OnEditModelSaving"
         VirtualScrollingMode="GridVirtualScrollingMode.RowsAndColumns"
         VirtualScrollingEnabled="VirtualScrollingEnabled" PageSize="10"
         SkeletonRowsEnabled="true">
@@ -72,19 +62,54 @@
 
 @code {
     bool VirtualScrollingEnabled { get; set; } = true;
-    private MyAppDbContext context = default!;
+    //private MyAppDbContext context = default!;
     private List<Product> products = new();
 
-    // protected override void OnInitialized()
-    // {
-    //     context = DbFactory.CreateDbContext();
-    // }
+    async Task OnEditModelSaving(GridEditModelSavingEventArgs e)
+    {
+        var editModel = (Product)e.EditModel;
+        await using var context = await DbFactory.CreateDbContextAsync();
+
+        Product entity;
+
+        if (e.IsNew)
+        {
+            entity = new Product();
+            context.Product.Add(entity);
+        }
+
+        else
+        {
+            var key = ((Product)e.DataItem).Id;
+            entity = await context.Product.FindAsync(key);
+
+            if (entity == null)
+                return;
+        }
+
+        entity.Name = editModel.Name;
+        entity.Price = editModel.Price;
+        entity.Qty = editModel.Qty;
+
+        await context.SaveChangesAsync();
+
+        await LoadData();   // reload from SQL Server
+    }
 
     protected override async Task OnInitializedAsync()
     {
-        context = DbFactory.CreateDbContext();
-        products = await context.Product.ToListAsync();
+        await LoadData();
+
     }
 
-    public async ValueTask DisposeAsync() => await context.DisposeAsync();
+    async Task LoadData()
+    {
+        await using var context = await DbFactory.CreateDbContextAsync();
+
+        products = await context.Product
+            .AsNoTracking()
+            .ToListAsync();
+    }
+
+    //public async ValueTask DisposeAsync() => await context.DisposeAsync();
 }
