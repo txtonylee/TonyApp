@@ -3,7 +3,6 @@
 @using Microsoft.AspNetCore.Components.QuickGrid
 @using TonyApp.Models
 @using TonyApp.Data
-@* @implements IAsyncDisposable *@
 @inject IDbContextFactory<TonyApp.Data.MyAppDbContext> DbFactory
 @rendermode InteractiveServer
 <PageTitle>Index</PageTitle>
@@ -21,6 +20,7 @@
         ShowFilterRow="true"
         EditMode="GridEditMode.EditRow"
         EditModelSaving="OnEditModelSaving"
+        DataItemDeleting="OnDataItemDeleting"
         VirtualScrollingMode="GridVirtualScrollingMode.RowsAndColumns"
         VirtualScrollingEnabled="VirtualScrollingEnabled" PageSize="10"
         SkeletonRowsEnabled="true">
@@ -62,8 +62,24 @@
 
 @code {
     bool VirtualScrollingEnabled { get; set; } = true;
-    //private MyAppDbContext context = default!;
     private List<Product> products = new();
+
+    async Task OnDataItemDeleting(GridDataItemDeletingEventArgs e)
+    {
+        var item = (Product)e.DataItem;
+
+        await using var context = await DbFactory.CreateDbContextAsync();
+
+        var entity = await context.Product.FindAsync(item.Id);
+
+        if (entity != null)
+        {
+            context.Remove(entity);
+            await context.SaveChangesAsync();
+        }
+
+        await LoadData();
+    }
 
     async Task OnEditModelSaving(GridEditModelSavingEventArgs e)
     {
@@ -82,9 +98,7 @@
         {
             var key = ((Product)e.DataItem).Id;
             entity = await context.Product.FindAsync(key);
-
-            if (entity == null)
-                return;
+            if (entity == null) return;
         }
 
         entity.Name = editModel.Name;
@@ -110,6 +124,4 @@
             .AsNoTracking()
             .ToListAsync();
     }
-
-    //public async ValueTask DisposeAsync() => await context.DisposeAsync();
 }
