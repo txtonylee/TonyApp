@@ -14,6 +14,6 @@ namespace TonyApp.Data
         {
         }
 
-        public DbSet<TonyApp.Models.Product> Product { get; set; } = default!;
+        public DbSet<Product> Product { get; set; } = default!;
     }
 }

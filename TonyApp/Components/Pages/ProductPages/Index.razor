@@ -3,6 +3,7 @@
 @using Microsoft.AspNetCore.Components.QuickGrid
 @using TonyApp.Models
 @using TonyApp.Data
+@using DevExpress.Data.Linq
 @inject IDbContextFactory<TonyApp.Data.MyAppDbContext> DbFactory
 @rendermode InteractiveServer
 <PageTitle>Index</PageTitle>
@@ -13,16 +14,18 @@
     <a href="products/create" class="btn btn-primary">Create New</a>
 </p>
 
-<DxGrid Data="@products"
+<DxGrid Data="@InstantFeedbackSource"
         CssClass="table"
         KeyFieldName="Id"
+        Height="600px"
         ShowGroupPanel="true"
         ShowFilterRow="true"
         EditMode="GridEditMode.EditRow"
         EditModelSaving="OnEditModelSaving"
         DataItemDeleting="OnDataItemDeleting"
-        VirtualScrollingMode="GridVirtualScrollingMode.RowsAndColumns"
-        VirtualScrollingEnabled="VirtualScrollingEnabled" PageSize="10"
+        VirtualScrollingMode="GridVirtualScrollingMode.Rows"
+        VirtualScrollingEnabled="VirtualScrollingEnabled" PageSize="25"
+        VirtualScrollMaxRequestItems="500"
         SkeletonRowsEnabled="true">
 
     <Columns>
@@ -35,11 +38,11 @@
                           Width="300px" >
             <CellDisplayTemplate Context="cellContext">
                 @{
-                    var product = (Product)cellContext.DataItem;
+                    var id = cellContext.Grid.GetDataItemValue(cellContext.DataItem, "Id");
                 }
-                <a href="@($"products/edit?id={product.Id}")" class="btn btn-info">Edit</a> |
-                <a href="@($"products/details?id={product.Id}")" class="btn btn-success">Details</a> |
-                <a href="@($"products/delete?id={product.Id}")" class="btn btn-danger">Delete</a>
+                <a href="@($"products/edit?id={id}")" class="btn btn-info">Edit</a> |
+                <a href="@($"products/details?id={id}")" class="btn btn-success">Details</a> |
+                <a href="@($"products/delete?id={id}")" class="btn btn-danger">Delete</a>
             </CellDisplayTemplate>
         </DxGridDataColumn>
     </Columns>
@@ -61,24 +64,39 @@
 </DxGrid>
 
 @code {
+    EntityInstantFeedbackSource InstantFeedbackSource { get; set; }
+
     bool VirtualScrollingEnabled { get; set; } = true;
-    private List<Product> products = new();
+
+    protected override void OnInitialized()
+    {
+        InstantFeedbackSource = new EntityInstantFeedbackSource(e =>
+        {
+            var context = DbFactory.CreateDbContext();
+
+            e.KeyExpression = "Id";
+            e.QueryableSource = context.Product
+                                       .AsNoTracking()
+                                       .OrderBy(p => p.Id);
+
+            e.Tag = context;
+        });
+
+    }
 
     async Task OnDataItemDeleting(GridDataItemDeletingEventArgs e)
     {
-        var item = (Product)e.DataItem;
+        var id = (Guid)e.Grid.GetDataItemValue(e.DataItem, "Id"); // safe access
 
         await using var context = await DbFactory.CreateDbContextAsync();
 
-        var entity = await context.Product.FindAsync(item.Id);
+        var entity = await context.Product.FindAsync(id);
 
         if (entity != null)
         {
             context.Remove(entity);
             await context.SaveChangesAsync();
         }
-
-        await LoadData();
     }
 
     async Task OnEditModelSaving(GridEditModelSavingEventArgs e)
@@ -90,7 +108,10 @@
 
         if (e.IsNew)
         {
-            entity = new Product();
+            entity = new Product()
+            {
+                Id = Guid.NewGuid()   // ✅ generate Guid
+            };
             context.Product.Add(entity);
         }
 
@@ -98,6 +119,7 @@
         {
             var key = ((Product)e.DataItem).Id;
             entity = await context.Product.FindAsync(key);
+
             if (entity == null) return;
         }
 
@@ -106,22 +128,10 @@
         entity.Qty = editModel.Qty;
 
         await context.SaveChangesAsync();
-
-        await LoadData();   // reload from SQL Server
     }
 
-    protected override async Task OnInitializedAsync()
+    public void Dispose()
     {
-        await LoadData();
-
-    }
-
-    async Task LoadData()
-    {
-        await using var context = await DbFactory.CreateDbContextAsync();
-
-        products = await context.Product
-            .AsNoTracking()
-            .ToListAsync();
+        InstantFeedbackSource?.Dispose();
     }
 }

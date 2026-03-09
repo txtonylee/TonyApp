@@ -2,6 +2,7 @@ using TonyApp.Components;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using TonyApp.Data;
+using TonyApp.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContextFactory<MyAppDbContext>(options =>
@@ -18,6 +19,11 @@ builder.Services.AddRazorComponents()
 builder.Services.AddDevExpressBlazor();
 builder.Services.AddSingleton<WeatherForecastService>();
 
+builder.Services.AddServerSideBlazor()
+       .AddCircuitOptions(options =>
+       {
+           options.DetailedErrors = true;
+       });
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
