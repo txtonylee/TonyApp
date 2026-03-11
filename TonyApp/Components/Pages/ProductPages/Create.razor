@@ -3,6 +3,7 @@
 @using TonyApp.Models
 @inject IDbContextFactory<TonyApp.Data.MyAppDbContext> DbFactory
 @inject NavigationManager NavigationManager
+@rendermode InteractiveServer
 
 <PageTitle>Create</PageTitle>
 
@@ -14,22 +15,46 @@
     <div class="col-md-4">
         <EditForm method="post" Model="Product" OnValidSubmit="AddProduct" FormName="create" Enhance>
             <DataAnnotationsValidator />
-            <ValidationSummary class="text-danger" role="alert"/>
+            <ValidationSummary class="text-danger" role="alert" />
             <div class="mb-3">
-                <label for="name" class="form-label">Name:</label> 
-                <InputText id="name" @bind-Value="Product.Name" class="form-control" /> 
-                <ValidationMessage For="() => Product.Name" class="text-danger" /> 
-            </div>        
+                <label for="name" class="form-label">Name:</label>
+                <InputText id="name" @bind-Value="Product!.Name" class="form-control" />
+                <ValidationMessage For="() => Product!.Name" class="text-danger" />
+            </div>
             <div class="mb-3">
-                <label for="price" class="form-label">Price:</label> 
-                <InputNumber id="price" @bind-Value="Product.Price" class="form-control" /> 
-                <ValidationMessage For="() => Product.Price" class="text-danger" /> 
-            </div>        
+                <label for="description" class="form-label">Description:</label>
+                <InputTextArea id="description" @bind-Value="Product.Description" class="form-control" />
+                <ValidationMessage For="() => Product.Description" class="text-danger" />
+            </div>
             <div class="mb-3">
-                <label for="qty" class="form-label">Qty:</label> 
-                <InputNumber id="qty" @bind-Value="Product.Qty" class="form-control" /> 
-                <ValidationMessage For="() => Product.Qty" class="text-danger" /> 
-            </div>        
+                <label for="category" class="form-label">Category:</label>
+                <InputText id="category" @bind-Value="Product.Category" class="form-control" />
+                <ValidationMessage For="() => Product.Category" class="text-danger" />
+            </div>
+            <div class="mb-3">
+                <label for="price" class="form-label">Price:</label>
+                <InputNumber id="price" @bind-Value="Product.Price" class="form-control" />
+                <ValidationMessage For="() => Product.Price" class="text-danger" />
+            </div>
+            <div class="mb-3">
+                <label for="qty" class="form-label">Qty:</label>
+                <InputNumber id="qty" @bind-Value="Product.Qty" class="form-control" />
+                <ValidationMessage For="() => Product.Qty" class="text-danger" />
+            </div>
+            <div class="mb-3">
+                <label for="supplier" class="form-label">Supplier:</label>
+                <InputText id="supplier" @bind-Value="Product.Supplier" class="form-control" />
+                <ValidationMessage For="() => Product.Supplier" class="text-danger" />
+            </div>
+            <div class="mb-3">
+                <label for="imageurl" class="form-label">Image URL:</label>
+                <InputText id="imageurl" @bind-Value="Product.ImageUrl" class="form-control" />
+                <ValidationMessage For="() => Product.ImageUrl" class="text-danger" />
+            </div>
+            <div class="mb-3 form-check">
+                <InputCheckbox id="isactive" @bind-Value="Product.IsActive" class="form-check-input" />
+                <label for="isactive" class="form-check-label">Active</label>
+            </div>
             <button type="submit" class="btn btn-primary">Create</button> |
             <a href="/products" class="btn btn-outline-secondary">Back to List</a>
         </EditForm>
@@ -37,17 +62,36 @@
 </div>
 
 @code {
+    /// <summary>
+    /// Product model bound to the form for data entry.
+    /// Automatically populated from form submission.
+    /// </summary>
     [SupplyParameterFromForm]
     private Product Product { get; set; } = default!;
-
-    protected override void OnInitialized() => Product ??= new();
-
-    // To protect from overposting attacks, see https://learn.microsoft.com/aspnet/core/blazor/forms/#mitigate-overposting-attacks.
+    /// <summary>
+    /// Initializes the component with a new Product instance.
+    /// Ensures the form has data to bind to.
+    /// </summary>
+    protected override void OnInitialized() => Product ??= new() { IsActive = true };
+    /// <summary>
+    /// Handles the product creation process.
+    /// Called when the form is submitted successfully.
+    /// </summary>
     private async Task AddProduct()
     {
+        // Create a new database context
         using var context = DbFactory.CreateDbContext();
+
+        // Set the creation date to current UTC time
+        Product.CreatedDate = DateTime.UtcNow;
+
+        // Add the product to the database context
         context.Product.Add(Product);
+
+        // Save changes to the database
         await context.SaveChangesAsync();
+
+        // Navigate back to the products list page
         NavigationManager.NavigateTo("/products");
     }
 }

@@ -20,12 +20,22 @@ else
         <div class="col-md-4">
             <EditForm method="post" Model="Product" OnValidSubmit="UpdateProduct" FormName="edit" Enhance>
                 <DataAnnotationsValidator />
-                <ValidationSummary role="alert"/>
+                <ValidationSummary role="alert" />
                 <input type="hidden" name="Product.Id" value="@Product.Id" />
                 <div class="mb-3">
                     <label for="name" class="form-label">Name:</label>
                     <InputText id="name" @bind-Value="Product.Name" class="form-control" />
                     <ValidationMessage For="() => Product.Name" class="text-danger" />
+                </div>
+                <div class="mb-3">
+                    <label for="description" class="form-label">Description:</label>
+                    <InputTextArea id="description" @bind-Value="Product.Description" class="form-control" />
+                    <ValidationMessage For="() => Product.Description" class="text-danger" />
+                </div>
+                <div class="mb-3">
+                    <label for="category" class="form-label">Category:</label>
+                    <InputText id="category" @bind-Value="Product.Category" class="form-control" />
+                    <ValidationMessage For="() => Product.Category" class="text-danger" />
                 </div>
                 <div class="mb-3">
                     <label for="price" class="form-label">Price:</label>
@@ -37,6 +47,20 @@ else
                     <InputNumber id="qty" @bind-Value="Product.Qty" class="form-control" />
                     <ValidationMessage For="() => Product.Qty" class="text-danger" />
                 </div>
+                <div class="mb-3">
+                    <label for="supplier" class="form-label">Supplier:</label>
+                    <InputText id="supplier" @bind-Value="Product.Supplier" class="form-control" />
+                    <ValidationMessage For="() => Product.Supplier" class="text-danger" />
+                </div>
+                <div class="mb-3">
+                    <label for="imageurl" class="form-label">Image URL:</label>
+                    <InputText id="imageurl" @bind-Value="Product.ImageUrl" class="form-control" />
+                    <ValidationMessage For="() => Product.ImageUrl" class="text-danger" />
+                </div>
+                <div class="mb-3 form-check">
+                    <InputCheckbox id="isactive" @bind-Value="Product.IsActive" class="form-check-input" />
+                    <label for="isactive" class="form-check-label">Active</label>
+                </div>
                 <button type="submit" class="btn btn-primary">Save</button> |
                 <a href="/products" class="btn btn-outline-secondary">Back to List</a>
             </EditForm>
@@ -45,36 +69,60 @@ else
 }
 
 @code {
+    /// <summary>
+    /// Product ID extracted from query string.
+    /// Used to identify which product to edit.
+    /// </summary>
     [SupplyParameterFromQuery]
     private Guid Id { get; set; }
-
+    /// <summary>
+    /// Product model bound to the form for data editing.
+    /// Automatically populated from form submission.
+    /// </summary>
     [SupplyParameterFromForm]
     private Product? Product { get; set; }
-
+    /// <summary>
+    /// Initializes the component by loading product data from database.
+    /// Called when the component is first loaded.
+    /// </summary>
     protected override async Task OnInitializedAsync()
     {
+        // Create a new database context
         using var context = DbFactory.CreateDbContext();
+
+        // Query the database for the product with the specified ID
         Product ??= await context.Product.FirstOrDefaultAsync(m => m.Id == Id);
 
+        // If product not found, navigate to 404 page
         if (Product is null)
         {
             NavigationManager.NotFound();
         }
     }
 
-    // To protect from overposting attacks, enable the specific properties you want to bind to.
-    // For more information, see https://learn.microsoft.com/aspnet/core/blazor/forms/#mitigate-overposting-attacks.
+    /// <summary>
+    /// Handles the product update process.
+    /// Called when the form is submitted successfully.
+    /// </summary>
     private async Task UpdateProduct()
     {
+        // Create a new database context
         using var context = DbFactory.CreateDbContext();
+
+        // Attach the product to the context and mark as modified
         context.Attach(Product!).State = EntityState.Modified;
+
+        // Update the last modified date
+        Product!.LastModifiedDate = DateTime.UtcNow;
 
         try
         {
+            // Save changes to the database
             await context.SaveChangesAsync();
         }
         catch (DbUpdateConcurrencyException)
         {
+            // Handle concurrency conflicts
             if (!ProductExists(Product!.Id))
             {
                 NavigationManager.NotFound();
@@ -84,13 +132,21 @@ else
                 throw;
             }
         }
-
+        // Navigate back to the products list page
         NavigationManager.NavigateTo("/products");
     }
 
+    /// <summary>
+    /// Checks if a product with the specified ID exists in the database.
+    /// </summary>
+    /// <param name="id">The ID of the product to check.</param>
+    /// <returns>True if the product exists, false otherwise.</returns>
     private bool ProductExists(Guid id)
     {
+        // Create a new database context
         using var context = DbFactory.CreateDbContext();
+
+        // Check if any product with the specified ID exists
         return context.Product.Any(e => e.Id == id);
     }
 }

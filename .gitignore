@@ -361,3 +361,5 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+/TonyApp/Migrations/20260311051541_EnhancedProductModel.cs
+/TonyApp/Migrations/20260311051541_EnhancedProductModel.Designer.cs

@@ -1,4 +1,9 @@
-﻿@page "/products/delete"
+﻿@* 
+Delete Product Page
+Handles the deletion of existing products with confirmation.
+Displays product information before deletion.
+*@
+@page "/products/delete"
 @using Microsoft.EntityFrameworkCore
 @using TonyApp.Models
 @inject IDbContextFactory<TonyApp.Data.MyAppDbContext> DbFactory
@@ -22,12 +27,24 @@
             <dd class="col-sm-10">@product.Name</dd>
         </dl>
         <dl class="row">
+            <dt class="col-sm-2">Description</dt>
+            <dd class="col-sm-10">@product.Description</dd>
+        </dl>
+        <dl class="row">
+            <dt class="col-sm-2">Category</dt>
+            <dd class="col-sm-10">@product.Category</dd>
+        </dl>
+        <dl class="row">
             <dt class="col-sm-2">Price</dt>
-            <dd class="col-sm-10">@product.Price</dd>
+            <dd class="col-sm-10">@product.Price.ToString("C")</dd>
         </dl>
         <dl class="row">
             <dt class="col-sm-2">Qty</dt>
             <dd class="col-sm-10">@product.Qty</dd>
+        </dl>
+        <dl class="row">
+            <dt class="col-sm-2">Status</dt>
+            <dd class="col-sm-10">@(product.IsActive ? "Active" : "Inactive")</dd>
         </dl>
         <EditForm method="post" Model="product" OnValidSubmit="DeleteProduct" FormName="delete" Enhance>
             <button type="submit" class="btn btn-danger" disabled="@(product is null)">Delete</button> |
@@ -37,27 +54,51 @@
 </div>
 
 @code {
+    /// <summary>
+    /// Product model representing the product to be deleted.
+    /// Populated from database query.
+    /// </summary>
     private Product? product;
-
+    /// <summary>
+    /// Product ID extracted from query string.
+    /// Used to identify which product to delete.
+    /// </summary>
     [SupplyParameterFromQuery]
     private Guid Id { get; set; }
-
+    /// <summary>
+    /// Initializes the component by loading product data from database.
+    /// Called when the component is first loaded.
+    /// </summary>
     protected override async Task OnInitializedAsync()
     {
+        // Create a new database context
         using var context = DbFactory.CreateDbContext();
+
+        // Query the database for the product with the specified ID
         product = await context.Product.FirstOrDefaultAsync(m => m.Id == Id);
 
+        // If product not found, navigate to 404 page
         if (product is null)
         {
             NavigationManager.NotFound();
         }
     }
-
+    /// <summary>
+    /// Handles the product deletion process.
+    /// Called when the delete button is clicked and form is submitted.
+    /// </summary>
     private async Task DeleteProduct()
     {
+        // Create a new database context
         using var context = DbFactory.CreateDbContext();
+
+        // Mark the product for deletion
         context.Product.Remove(product!);
+
+        // Save changes to the database
         await context.SaveChangesAsync();
+
+        // Navigate back to the products list page
         NavigationManager.NavigateTo("/products");
     }
 }

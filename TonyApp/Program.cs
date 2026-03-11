@@ -43,4 +43,12 @@ app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
+// Initialize the database with the default content
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    var context = services.GetRequiredService<MyAppDbContext>();
+    context.Database.Migrate(); // This applies pending migrations
+}
+
 app.Run();

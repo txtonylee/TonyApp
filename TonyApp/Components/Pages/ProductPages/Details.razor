@@ -19,29 +19,59 @@
         <dl class="row">
             <dt class="col-sm-2">Name</dt>
             <dd class="col-sm-10">@product.Name</dd>
+            <dt class="col-sm-2">Description</dt>
+            <dd class="col-sm-10">@product.Description</dd>
+            <dt class="col-sm-2">Category</dt>
+            <dd class="col-sm-10">@product.Category</dd>
             <dt class="col-sm-2">Price</dt>
-            <dd class="col-sm-10">@product.Price</dd>
+            <dd class="col-sm-10">@product.Price.ToString("C")</dd>
             <dt class="col-sm-2">Qty</dt>
             <dd class="col-sm-10">@product.Qty</dd>
+            <dt class="col-sm-2">Supplier</dt>
+            <dd class="col-sm-10">@product.Supplier</dd>
+            <dt class="col-sm-2">Created Date</dt>
+            <dd class="col-sm-10">@product.CreatedDate.ToString("d")</dd>
+            <dt class="col-sm-2">Last Modified</dt>
+            <dd class="col-sm-10">@(product.LastModifiedDate?.ToString("d") ?? "Never")</dd>
+            <dt class="col-sm-2">Status</dt>
+            <dd class="col-sm-10">@(product.IsActive ? "Active" : "Inactive")</dd>
+            @if (!string.IsNullOrEmpty(product.ImageUrl))
+            {
+                <dt class="col-sm-2">Image</dt>
+                <dd class="col-sm-10"><img src="@product.ImageUrl" alt="@product.Name" style="max-width: 200px;" /></dd>
+            }
         </dl>
         <div>
-            <a href="@($"/products/edit?id={product.Id}")">Edit</a> |
+            <a href="@($"/products/edit?id={product.Id}")" class="btn btn-info">Edit</a> |
             <a href="@($"/products")" class="btn btn-outline-secondary">Back to List</a>
         </div>
     }
 </div>
 
 @code {
+    /// <summary>
+    /// Product model representing the product to display.
+    /// Populated from database query.
+    /// </summary>
     private Product? product;
-
+    /// <summary>
+    /// Product ID extracted from query string.
+    /// Used to identify which product to display.
+    /// </summary>
     [SupplyParameterFromQuery]
     private Guid Id { get; set; }
-
+    /// <summary>
+    /// Initializes the component by loading product data from database.
+    /// Called when the component is first loaded.
+    /// </summary>
     protected override async Task OnInitializedAsync()
     {
+        // Create a new database context
         using var context = DbFactory.CreateDbContext();
-        product = await context.Product.FirstOrDefaultAsync(m => m.Id == Id);
 
+        // Query the database for the product with the specified ID
+        product = await context.Product.FirstOrDefaultAsync(m => m.Id == Id);
+        // If product not found, navigate to 404 page
         if (product is null)
         {
             NavigationManager.NotFound();

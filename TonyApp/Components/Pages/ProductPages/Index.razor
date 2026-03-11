@@ -1,62 +1,176 @@
-﻿@page "/products"
+﻿@* 
+Product List Page
+Displays a grid of all products with filtering, sorting, and editing capabilities.
+Uses DevExpress Blazor components for enhanced UI functionality.
+*@
+@page "/products"
 @using Microsoft.EntityFrameworkCore
-@using Microsoft.AspNetCore.Components.QuickGrid
+@using DevExpress.Blazor
 @using TonyApp.Models
 @using TonyApp.Data
-@using DevExpress.Data.Linq
 @inject IDbContextFactory<TonyApp.Data.MyAppDbContext> DbFactory
+@inject NavigationManager Navigation
 @rendermode InteractiveServer
-<PageTitle>Index</PageTitle>
 
-<h1>Index</h1>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+<PageTitle>Products Index</PageTitle>
 
-<p>
-    <a href="products/create" class="btn btn-primary">Create New</a>
-</p>
+<h1>Products</h1>
 
-<DxGrid Data="@InstantFeedbackSource"
-        CssClass="table"
+<DxGrid @ref="Grid"
+        Data="@products"
+        CssClass="products-grid"
         KeyFieldName="Id"
-        Height="600px"
         ShowGroupPanel="true"
         ShowFilterRow="true"
+        AllowGroup="true"
+        ShowGroupedColumns="true"
+        AutoExpandAllGroupRows="false"
+        ShowSearchBox="true"
+        AllowColumnReorder="true"
+        AllowSort="true"
+        SelectionMode="GridSelectionMode.Multiple"
+        SelectAllCheckboxMode="GridSelectAllCheckboxMode.Mixed"
+        AllowSelectRowByClick="true"
+        FocusedRowEnabled="false"
+        HighlightRowOnHover="true"
+        GroupFooterDisplayMode="GridGroupFooterDisplayMode.IfExpanded"
+        ColumnResizeMode="GridColumnResizeMode.ColumnsContainer"
+        FilterMenuButtonDisplayMode="GridFilterMenuButtonDisplayMode.Always"
         EditMode="GridEditMode.EditRow"
         EditModelSaving="OnEditModelSaving"
         DataItemDeleting="OnDataItemDeleting"
         VirtualScrollingMode="GridVirtualScrollingMode.Rows"
-        VirtualScrollingEnabled="VirtualScrollingEnabled" PageSize="25"
+        VirtualScrollingEnabled="@VirtualScrollingEnabled"
+        PageSize="25"
         VirtualScrollMaxRequestItems="500"
-        SkeletonRowsEnabled="true">
+        SkeletonRowsEnabled="true"
+        ShowTotalSummary="true"
+        ShowGroupSummary="true">
 
     <Columns>
-        <DxGridCommandColumn Width="100px" />
-        <DxGridDataColumn FieldName="Name" Caption="Name" />
-        <DxGridDataColumn FieldName="Price" Caption="Price" DisplayFormat="c2" />
-        <DxGridDataColumn FieldName="Qty" Caption="Qty" />
+        <DxGridSelectionColumn Width="60px" />
 
-        <DxGridDataColumn Caption="Actions"
-                          Width="300px" >
+        <DxGridCommandColumn Width="140px" />
+
+        <DxGridDataColumn FieldName="Name" Caption="Name" MinWidth="180" />
+        <DxGridDataColumn FieldName="Category" Caption="Category" MinWidth="140" />
+        <DxGridDataColumn FieldName="Price" Caption="Price" DisplayFormat="c2" Width="320px" />
+        <DxGridDataColumn FieldName="Qty" Caption="Qty" DisplayFormat="n0" Width="320px" />
+
+        <DxGridDataColumn FieldName="IsActive" Caption="Active" Width="110px">
+            <CellDisplayTemplate Context="cellContext">
+                @{
+                    var isActive = (bool)cellContext.Grid.GetDataItemValue(cellContext.DataItem, "IsActive");
+                }
+                <span class="badge @(isActive ? "bg-success" : "bg-danger")">
+                    @(isActive ? "Yes" : "No")
+                </span>
+            </CellDisplayTemplate>
+        </DxGridDataColumn>
+
+        <DxGridDataColumn FieldName="CreatedDate" Caption="Created" DisplayFormat="MMM dd, yyyy" Width="140px" />
+
+        <DxGridDataColumn Caption="Actions" Width="120px" SearchEnabled="false">
             <CellDisplayTemplate Context="cellContext">
                 @{
                     var id = cellContext.Grid.GetDataItemValue(cellContext.DataItem, "Id");
                 }
-                <a href="@($"products/edit?id={id}")" class="btn btn-info">Edit</a> |
-                <a href="@($"products/details?id={id}")" class="btn btn-success">Details</a> |
-                <a href="@($"products/delete?id={id}")" class="btn btn-danger">Delete</a>
+                <a href="@($"/products/details?id={id}")" class="btn btn-success btn-sm">Details</a> | 
+                <a href="@($"/products/delete?id={id}")" class="btn btn-danger btn-sm">Delete</a>
             </CellDisplayTemplate>
         </DxGridDataColumn>
     </Columns>
 
-    <ToolbarTemplate>
+    <GroupSummary>
+        <DxGridSummaryItem SummaryType="GridSummaryItemType.Count"
+                           FieldName="Id"
+                           DisplayText="Count: {0}" />
+
+        <DxGridSummaryItem SummaryType="GridSummaryItemType.Sum"
+                           FieldName="Price"
+                           DisplayText="Total Price: {0:c2}"
+                           FooterColumnName="Price" />
+
+        <DxGridSummaryItem SummaryType="GridSummaryItemType.Avg"
+                           FieldName="Price"
+                           DisplayText="Avg Price: {0:c2}"
+                           FooterColumnName="Price" />
+
+        <DxGridSummaryItem SummaryType="GridSummaryItemType.Sum"
+                           FieldName="Qty"
+                           DisplayText="Total Qty: {0:n0}"
+                           FooterColumnName="Qty" />
+
+        <DxGridSummaryItem SummaryType="GridSummaryItemType.Avg"
+                           FieldName="Qty"
+                           DisplayText="Avg Qty: {0:F1}"
+                           FooterColumnName="Qty" />
+    </GroupSummary>
+
+    <TotalSummary>
+        <DxGridSummaryItem SummaryType="GridSummaryItemType.Count"
+                           FieldName="Id"
+                           DisplayText="Total Items: {0}" />
+
+        <DxGridSummaryItem SummaryType="GridSummaryItemType.Sum"
+                           FieldName="Price"
+                           DisplayText="Grand Total: {0:c2}"
+                           FooterColumnName="Price" />
+
+        <DxGridSummaryItem SummaryType="GridSummaryItemType.Avg"
+                           FieldName="Price"
+                           DisplayText="Overall Avg: {0:c2}"
+                           FooterColumnName="Price" />
+
+        <DxGridSummaryItem SummaryType="GridSummaryItemType.Sum"
+                           FieldName="Qty"
+                           DisplayText="Total Quantity: {0:n0}"
+                           FooterColumnName="Qty" />
+
+        <DxGridSummaryItem SummaryType="GridSummaryItemType.Avg"
+                           FieldName="Qty"
+                           DisplayText="Avg Quantity: {0:F1}"
+                           FooterColumnName="Qty" />
+    </TotalSummary>
+
+    <ToolbarTemplate Context="gridToolbarContext">
         <DxToolbar ItemRenderStyleMode="ToolbarRenderStyleMode.Plain">
             <Items>
                 <DxToolbarItem BeginGroup="true" Alignment="ToolbarItemAlignment.Left">
                     <Template Context="toolbar_item_context">
-                        <div class="d-flex flex-row align-items-center h-100">
-                            <DxCheckBox @bind-Checked="VirtualScrollingEnabled">Enable Virtual Scrolling</DxCheckBox>
+                        <div class="d-flex flex-row align-items-center h-100 me-3">
+                            <DxCheckBox @bind-Checked="VirtualScrollingEnabled">
+                                Enable Virtual Scrolling
+                            </DxCheckBox>
                         </div>
                     </Template>
                 </DxToolbarItem>
+
+                <DxToolbarItem Alignment="ToolbarItemAlignment.Right"
+                               Text="Column Chooser"
+                               RenderStyle="ButtonRenderStyle.Secondary"
+                               IconCssClass="bi bi-layout-three-columns"
+                               Click="ColumnChooserButton_Click" />
+
+                <DxToolbarItem Text="Add Product"
+                               BeginGroup="true"
+                               Alignment="ToolbarItemAlignment.Left"
+                               RenderStyle="ButtonRenderStyle.Primary"
+                               IconCssClass="bi bi-plus-circle"
+                               Click="AddProduct" />
+
+                <DxToolbarItem Text="Refresh"
+                               Alignment="ToolbarItemAlignment.Left"
+                               RenderStyle="ButtonRenderStyle.Secondary"
+                               IconCssClass="bi bi-arrow-clockwise"
+                               Click="RefreshGrid" />
+
+                <DxToolbarItem Text="Clear Filters"
+                               Alignment="ToolbarItemAlignment.Left"
+                               RenderStyle="ButtonRenderStyle.Secondary"
+                               IconCssClass="bi bi-funnel"
+                               Click="ClearFilters" />
             </Items>
         </DxToolbar>
     </ToolbarTemplate>
@@ -64,32 +178,47 @@
 </DxGrid>
 
 @code {
-    EntityInstantFeedbackSource InstantFeedbackSource { get; set; }
+    private DxGrid? Grid { get; set; }
+    private List<Product> products = new();
 
     bool VirtualScrollingEnabled { get; set; } = true;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        InstantFeedbackSource = new EntityInstantFeedbackSource(e =>
-        {
-            var context = DbFactory.CreateDbContext();
-
-            e.KeyExpression = "Id";
-            e.QueryableSource = context.Product
-                                       .AsNoTracking()
-                                       .OrderBy(p => p.Id);
-
-            e.Tag = context;
-        });
-
+        await LoadProductsAsync();
     }
 
-    async Task OnDataItemDeleting(GridDataItemDeletingEventArgs e)
+    private async Task LoadProductsAsync()
     {
-        var id = (Guid)e.Grid.GetDataItemValue(e.DataItem, "Id"); // safe access
-
         await using var context = await DbFactory.CreateDbContextAsync();
 
+        products = await context.Product
+            .AsNoTracking()
+            .OrderBy(p => p.Name)
+            .ToListAsync();
+    }
+
+    private void AddProduct()
+    {
+        Navigation.NavigateTo("/products/create");
+    }
+
+    private async Task RefreshGrid()
+    {
+        await LoadProductsAsync();
+        StateHasChanged();
+    }
+
+    private void ClearFilters()
+    {
+        Grid?.ClearFilter();
+    }
+
+    private async Task OnDataItemDeleting(GridDataItemDeletingEventArgs e)
+    {
+        var id = (Guid)e.Grid.GetDataItemValue(e.DataItem, "Id");
+
+        await using var context = await DbFactory.CreateDbContextAsync();
         var entity = await context.Product.FindAsync(id);
 
         if (entity != null)
@@ -97,11 +226,14 @@
             context.Remove(entity);
             await context.SaveChangesAsync();
         }
+
+        await LoadProductsAsync();
     }
 
-    async Task OnEditModelSaving(GridEditModelSavingEventArgs e)
+    private async Task OnEditModelSaving(GridEditModelSavingEventArgs e)
     {
         var editModel = (Product)e.EditModel;
+
         await using var context = await DbFactory.CreateDbContextAsync();
 
         Product entity;
@@ -110,7 +242,8 @@
         {
             entity = new Product()
             {
-                Id = Guid.NewGuid()   // ✅ generate Guid
+                Id = Guid.NewGuid(),
+                CreatedDate = DateTime.UtcNow
             };
             context.Product.Add(entity);
         }
@@ -121,17 +254,25 @@
             entity = await context.Product.FindAsync(key);
 
             if (entity == null) return;
+
+            entity.LastModifiedDate = DateTime.UtcNow;
         }
 
         entity.Name = editModel.Name;
+        entity.Description = editModel.Description;
+        entity.Category = editModel.Category;
         entity.Price = editModel.Price;
         entity.Qty = editModel.Qty;
+        entity.IsActive = editModel.IsActive;
+        entity.Supplier = editModel.Supplier;
+        entity.ImageUrl = editModel.ImageUrl;
 
         await context.SaveChangesAsync();
+        await LoadProductsAsync();
     }
 
-    public void Dispose()
+    void ColumnChooserButton_Click()
     {
-        InstantFeedbackSource?.Dispose();
+        Grid.ShowColumnChooser();
     }
 }
