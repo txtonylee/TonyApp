@@ -51,12 +51,13 @@ Uses DevExpress Blazor components for enhanced UI functionality.
     <Columns>
         <DxGridSelectionColumn Width="60px" />
 
-        <DxGridCommandColumn Width="140px" />
+        <DxGridCommandColumn Width="100px" />
 
         <DxGridDataColumn FieldName="Name" Caption="Name" MinWidth="180" />
+        <DxGridDataColumn FieldName="Description" Caption="Description" MinWidth="140" />
         <DxGridDataColumn FieldName="Category" Caption="Category" MinWidth="140" />
-        <DxGridDataColumn FieldName="Price" Caption="Price" DisplayFormat="c2" Width="320px" />
-        <DxGridDataColumn FieldName="Qty" Caption="Qty" DisplayFormat="n0" Width="320px" />
+        <DxGridDataColumn FieldName="Price" Caption="Price" DisplayFormat="c2" MinWidth="150" />
+        <DxGridDataColumn FieldName="Qty" Caption="Qty" DisplayFormat="n0" MinWidth="150" />
 
         <DxGridDataColumn FieldName="IsActive" Caption="Active" Width="110px">
             <CellDisplayTemplate Context="cellContext">
@@ -85,7 +86,8 @@ Uses DevExpress Blazor components for enhanced UI functionality.
     <GroupSummary>
         <DxGridSummaryItem SummaryType="GridSummaryItemType.Count"
                            FieldName="Id"
-                           DisplayText="Count: {0}" />
+                           DisplayText="Count: {0}" 
+                           FooterColumnName="Name" />
 
         <DxGridSummaryItem SummaryType="GridSummaryItemType.Sum"
                            FieldName="Price"
@@ -111,7 +113,8 @@ Uses DevExpress Blazor components for enhanced UI functionality.
     <TotalSummary>
         <DxGridSummaryItem SummaryType="GridSummaryItemType.Count"
                            FieldName="Id"
-                           DisplayText="Total Items: {0}" />
+                           DisplayText="Total Items: {0}"
+                           FooterColumnName="Name" />
 
         <DxGridSummaryItem SummaryType="GridSummaryItemType.Sum"
                            FieldName="Price"

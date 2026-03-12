@@ -1,6 +1,6 @@
 
 BULK INSERT dbo.Product
-FROM 'C:\Users\TONY\Downloads\Compressed\tech_50k.csv'
+FROM 'C:\Users\TONY\Downloads\Compressed\products_500k.csv'
 WITH (
     DATAFILETYPE = 'char',
     FIELDTERMINATOR = ',',  -- use ',' for CSV files
@@ -9,3 +9,9 @@ WITH (
     BATCHSIZE = 5000,
     TABLOCK                 -- improves performance
 );
+
+select * from Product
+
+delete from Product
+
+DELETE FROM Product WHERE RAND() < 0.5;

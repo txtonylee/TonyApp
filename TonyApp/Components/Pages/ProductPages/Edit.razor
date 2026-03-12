@@ -22,6 +22,7 @@ else
                 <DataAnnotationsValidator />
                 <ValidationSummary role="alert" />
                 <input type="hidden" name="Product.Id" value="@Product.Id" />
+                <input type="hidden" name="Product.CreatedDate" value="@Product.CreatedDate" />
                 <div class="mb-3">
                     <label for="name" class="form-label">Name:</label>
                     <InputText id="name" @bind-Value="Product.Name" class="form-control" />
