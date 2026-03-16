@@ -1,6 +1,6 @@
 
 BULK INSERT dbo.Product
-FROM 'C:\Users\TONY\Downloads\Compressed\products_500k.csv'
+FROM 'C:\Users\TONY\Downloads\Compressed\products_1m.csv'
 WITH (
     DATAFILETYPE = 'char',
     FIELDTERMINATOR = ',',  -- use ',' for CSV files

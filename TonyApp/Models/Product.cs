@@ -28,7 +28,7 @@ namespace TonyApp.Models
         /// <summary>
         /// Price of the product.
         /// </summary>
-        public double Price { get; set; }
+        public decimal Price { get; set; }
         /// <summary>
         /// Quantity available in stock.
         /// </summary>
